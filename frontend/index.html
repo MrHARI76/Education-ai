@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NexusEd AI</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x2='1' y2='1'%3E%3Cstop stop-color='%236366f1'/%3E%3Cstop offset='.5' stop-color='%23d946ef'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3C/svg%3E" />
+  <meta name="description" content="Turn any document into a mind map you can learn from." />
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS (CDN build: utility classes are generated in the browser, no build step) -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] } } } };
+  </script>
+
+  <!-- Cytoscape.js draws the interactive mind-map graph -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="h-full bg-slate-950 text-slate-100 font-sans antialiased overflow-x-hidden">
+  <!-- Drifting aurora blobs (purely decorative) -->
+  <div class="aurora" aria-hidden="true">
+    <div class="blob blob-indigo"></div>
+    <div class="blob blob-fuchsia"></div>
+    <div class="blob blob-cyan"></div>
+  </div>
+
+  <!-- ===================== Top bar ===================== -->
+  <header id="topbar" class="fixed top-0 inset-x-0 z-30 px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
+    <button id="brand" class="flex items-center gap-2 shrink-0" title="Home">
+      <span class="logo-dot"></span>
+      <span class="font-extrabold tracking-tight text-lg gradient-text">NexusEd AI</span>
+    </button>
+
+    <!-- Shown only on the mind-map screen -->
+    <!-- On phones the toolbar drops to its own full-width row (order-last w-full) -->
+    <div id="map-toolbar" class="hidden order-last w-full md:order-none md:w-auto md:flex-1 min-w-0 items-center gap-3 sm:gap-4">
+      <div class="min-w-0 hidden md:block">
+        <p id="map-filename" class="truncate text-sm font-semibold text-slate-200"></p>
+      </div>
+      <div class="flex-1 min-w-[120px] max-w-xs">
+        <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+          <span>Progress</span><span id="explored-label">0 of 0 explored</span>
+        </div>
+        <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div id="explored-bar" class="h-full w-0 gradient-bg rounded-full transition-all duration-500"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 ml-auto">
+        <button class="tool-btn" id="btn-fit" title="Fit view">⤢<span class="hidden lg:inline">Fit</span></button>
+        <button class="tool-btn" id="btn-relayout" title="Re-layout">⟳<span class="hidden lg:inline">Re-layout</span></button>
+        <button class="tool-btn" id="btn-export" title="Export PNG">⬇<span class="hidden lg:inline">PNG</span></button>
+        <button class="tool-btn tool-btn-primary" id="btn-new" title="New upload">＋<span class="hidden sm:inline">New</span></button>
+      </div>
+    </div>
+
+    <!-- Health chips: green = OK, amber = model missing, red = down -->
+    <div id="health" class="flex items-center gap-2 shrink-0 ml-auto">
+      <span class="chip" id="chip-ollama" title="Checking Ollama…"><i class="dot"></i><span class="hidden sm:inline">Ollama</span></span>
+      <span class="chip" id="chip-qdrant" title="Checking Qdrant…"><i class="dot"></i><span class="hidden sm:inline">Qdrant</span></span>
+    </div>
+  </header>
+
+  <main class="relative z-10 h-full">
+    <!-- ===================== Screen 1: Upload ===================== -->
+    <section id="screen-upload" class="screen min-h-full pt-28 pb-16 px-4">
+      <div class="max-w-3xl mx-auto text-center">
+        <p class="inline-flex items-center gap-2 text-xs font-medium text-indigo-200 glass rounded-full px-3 py-1 mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 100% local · runs offline with Ollama
+        </p>
+        <h1 class="text-5xl sm:text-7xl font-extrabold tracking-tight gradient-text pb-2">NexusEd AI</h1>
+        <p class="mt-4 text-lg sm:text-xl text-slate-300">Turn any document into a mind map you can learn from</p>
+
+        <!-- Drag-and-drop zone (also a button that opens the file picker) -->
+        <label id="dropzone" for="file-input" tabindex="0"
+          class="dropzone glass mt-10 block cursor-pointer rounded-3xl p-10 sm:p-14 transition-all duration-300 hover:scale-[1.01]">
+          <input id="file-input" type="file" class="sr-only" accept=".pdf,.docx,.pptx" />
+          <div class="drop-icon mx-auto mb-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-9 h-9">
+              <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" />
+            </svg>
+          </div>
+          <p id="drop-title" class="text-xl font-semibold">Drop your file here</p>
+          <p id="drop-sub" class="mt-2 text-slate-400">or click to browse · PDF, DOCX or PPTX · up to 25 MB</p>
+        </label>
+
+        <div class="mt-6 flex flex-wrap justify-center gap-2 text-xs text-slate-400">
+          <span class="glass rounded-full px-3 py-1">🗺️ Interactive mind map</span>
+          <span class="glass rounded-full px-3 py-1">💡 Simple explanations</span>
+          <span class="glass rounded-full px-3 py-1">🧠 Instant quizzes</span>
+          <span class="glass rounded-full px-3 py-1">📄 Page-level sources</span>
+        </div>
+      </div>
+
+      <!-- Recent documents -->
+      <div class="max-w-3xl mx-auto mt-14">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3 px-1">Recent documents</h2>
+        <div id="recent-list" class="glass rounded-2xl divide-y divide-white/5 overflow-hidden">
+          <p class="p-5 text-sm text-slate-500">No documents yet — upload one above.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Screen 2: Processing ===================== -->
+    <section id="screen-processing" class="screen hidden min-h-full pt-28 pb-16 px-4">
+      <div class="max-w-lg mx-auto">
+        <div class="glass rounded-3xl p-8 sm:p-10">
+          <p class="text-xs uppercase tracking-wider text-slate-400">Processing</p>
+          <h2 id="proc-filename" class="mt-1 text-2xl font-bold truncate"></h2>
+          <p id="proc-filesize" class="text-sm text-slate-400"></p>
+
+          <ol id="stepper" class="mt-8 space-y-5">
+            <li class="step" data-step="0"><span class="step-icon"></span><div><p class="step-title">Reading file</p><p class="step-sub">Extracting text from pages and slides</p></div></li>
+            <li class="step" data-step="1"><span class="step-icon"></span><div><p class="step-title">Understanding content</p><p class="step-sub">Creating embeddings for every passage</p></div></li>
+            <li class="step" data-step="2"><span class="step-icon"></span><div><p class="step-title">Finding key concepts</p><p class="step-sub">Spotting the ideas that matter most</p></div></li>
+            <li class="step" data-step="3"><span class="step-icon"></span><div><p class="step-title">Building your mind map</p><p class="step-sub">The local AI is organising concepts</p></div></li>
+          </ol>
+
+          <div class="mt-8">
+            <div class="flex justify-between text-xs text-slate-400 mb-1.5"><span id="proc-status">Starting…</span><span id="proc-percent">0%</span></div>
+            <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div id="proc-bar" class="h-full w-0 gradient-bg rounded-full transition-all duration-700 progress-glow"></div>
+            </div>
+          </div>
+
+          <!-- Error card (hidden unless processing fails) -->
+          <div id="proc-error" class="hidden mt-8 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-5">
+            <p class="font-semibold text-rose-200">😕 We couldn't build this mind map</p>
+            <p id="proc-error-msg" class="mt-1 text-sm text-rose-100/80"></p>
+            <div class="mt-4 flex gap-2">
+              <button id="btn-retry" class="tool-btn tool-btn-primary">Retry</button>
+              <button id="btn-other" class="tool-btn">Upload another file</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Screen 3: Mind map ===================== -->
+    <section id="screen-map" class="screen hidden fixed inset-0">
+      <div id="cy" class="absolute inset-0"></div>
+      <p id="map-hint" class="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-slate-400 glass rounded-full px-4 py-2">
+        Click a concept to learn it<span class="hidden sm:inline"> · scroll to zoom · drag to move</span>
+      </p>
+    </section>
+  </main>
+
+  <!-- ===================== Concept drawer ===================== -->
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+  <aside id="drawer" class="drawer glass-strong" role="dialog" aria-modal="false" aria-labelledby="drawer-title">
+    <div class="drawer-handle md:hidden"></div>
+    <div class="flex items-start gap-3 p-5 pb-3 border-b border-white/10">
+      <span id="drawer-swatch" class="mt-1.5 w-3 h-3 rounded-full shrink-0"></span>
+      <div class="min-w-0 flex-1">
+        <p id="drawer-parent" class="text-xs text-slate-400 truncate"></p>
+        <h3 id="drawer-title" class="text-xl font-bold leading-tight"></h3>
+      </div>
+      <button id="drawer-close" class="tool-btn !px-2.5" title="Close (Esc)">✕</button>
+    </div>
+    <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+      <span class="text-sm text-slate-300">Explain simpler</span>
+      <button id="simple-toggle" class="switch" role="switch" aria-checked="false" title="Re-explain for a 12-year-old"><span></span></button>
+    </div>
+    <div id="drawer-body" class="drawer-body p-5 space-y-5"></div>
+  </aside>
+
+  <!-- Toast notifications -->
+  <div id="toasts" class="fixed z-50 bottom-4 right-4 left-4 sm:left-auto flex flex-col gap-2 items-end"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

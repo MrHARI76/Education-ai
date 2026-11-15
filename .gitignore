@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+data/
+qdrant_storage/
+.DS_Store
+.ruff_cache/

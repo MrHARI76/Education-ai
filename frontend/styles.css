@@ -1,0 +1,310 @@
+/*
+  NexusEd AI styles.
+  Tailwind handles most layout; this file holds the pieces Tailwind can't
+  express simply: aurora background, glass panels, the drawer, stepper,
+  quiz animations, shimmer skeleton and toasts.
+*/
+
+:root {
+  --indigo: #818cf8;
+  --fuchsia: #e879f9;
+  --cyan: #22d3ee;
+  --ok: #34d399;
+  --bad: #fb7185;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background: #020617; /* slate-950 */
+}
+
+/* ---------- Gradients ---------- */
+.gradient-text {
+  background: linear-gradient(90deg, var(--indigo), var(--fuchsia), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gradient-bg {
+  background: linear-gradient(90deg, #6366f1, #d946ef, #06b6d4);
+}
+.progress-glow {
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.55);
+}
+
+/* ---------- Aurora background ---------- */
+.aurora {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.blob {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.32;
+  animation: drift 26s ease-in-out infinite alternate;
+}
+.blob-indigo { background: #4f46e5; top: -12vmax; left: -10vmax; }
+.blob-fuchsia { background: #c026d3; bottom: -16vmax; right: -12vmax; animation-delay: -9s; animation-duration: 31s; }
+.blob-cyan { background: #0891b2; top: 30%; left: 45%; width: 32vmax; height: 32vmax; opacity: 0.22; animation-delay: -17s; animation-duration: 36s; }
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6vmax, 4vmax) scale(1.08); }
+  100% { transform: translate(-4vmax, 7vmax) scale(0.95); }
+}
+
+/* ---------- Glass ---------- */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.5);
+}
+.glass-strong {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7);
+}
+#topbar {
+  background: linear-gradient(to bottom, rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0));
+}
+
+.logo-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: conic-gradient(from 200deg, #6366f1, #d946ef, #06b6d4, #6366f1);
+  box-shadow: 0 0 18px rgba(129, 140, 248, 0.7);
+}
+
+/* ---------- Buttons, chips, switch ---------- */
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tool-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateY(-1px); }
+.tool-btn-primary {
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  border-color: transparent;
+  color: white;
+}
+.tool-btn-primary:hover { filter: brightness(1.12); background: linear-gradient(90deg, #6366f1, #a855f7); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  cursor: help;
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+.chip.ok .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.chip.warn .dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+.chip.bad .dot { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+
+.switch {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  position: relative;
+  transition: background 0.25s;
+}
+.switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.25s;
+}
+.switch[aria-checked="true"] { background: linear-gradient(90deg, #6366f1, #d946ef); }
+.switch[aria-checked="true"] span { transform: translateX(18px); }
+.switch:disabled { opacity: 0.5; }
+
+/* ---------- Drop zone ---------- */
+.dropzone {
+  position: relative;
+  border: 2px dashed rgba(165, 180, 252, 0.35);
+  box-shadow: 0 0 60px -20px rgba(129, 140, 248, 0.6);
+}
+.dropzone:focus-visible { outline: 2px solid var(--indigo); outline-offset: 4px; }
+.drop-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg, #6366f1, #d946ef);
+  box-shadow: 0 0 40px rgba(217, 70, 239, 0.5);
+}
+/* Animated gradient border while a file is dragged over */
+.dropzone.drag-over {
+  border-color: transparent;
+  transform: scale(1.02);
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)) padding-box,
+    linear-gradient(var(--angle, 0deg), #6366f1, #d946ef, #06b6d4, #6366f1) border-box;
+  animation: spin-border 2.5s linear infinite;
+  box-shadow: 0 0 90px -10px rgba(217, 70, 239, 0.7);
+}
+@property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes spin-border { to { --angle: 360deg; } }
+
+/* ---------- Stepper ---------- */
+.step { display: flex; gap: 1rem; align-items: flex-start; opacity: 0.45; transition: opacity 0.4s; }
+.step-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.4s;
+}
+.step-title { font-weight: 600; }
+.step-sub { font-size: 0.8rem; color: #94a3b8; }
+.step.active { opacity: 1; }
+.step.active .step-icon {
+  border-color: var(--fuchsia);
+  box-shadow: 0 0 0 0 rgba(232, 121, 249, 0.6);
+  animation: pulse-ring 1.6s infinite;
+}
+.step.active .step-icon::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--fuchsia); }
+.step.done { opacity: 1; }
+.step.done .step-icon { background: var(--ok); border-color: var(--ok); color: #022c22; }
+.step.done .step-icon::after { content: "✓"; }
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(232, 121, 249, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(232, 121, 249, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 121, 249, 0); }
+}
+
+/* ---------- Drawer (side panel on desktop, bottom sheet on mobile) ---------- */
+.drawer {
+  position: fixed;
+  z-index: 40;
+  top: 72px;
+  right: 16px;
+  bottom: 16px;
+  width: min(440px, calc(100vw - 32px));
+  border-radius: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(calc(100% + 32px));
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.drawer.open { transform: translateX(0); }
+.drawer-body { overflow-y: auto; flex: 1; }
+.drawer-backdrop { display: none; }
+
+@media (max-width: 767px) {
+  .drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 78vh;
+    border-radius: 1.5rem 1.5rem 0 0;
+    transform: translateY(100%);
+  }
+  .drawer.open { transform: translateY(0); }
+  .drawer-handle { width: 44px; height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.25); margin: 10px auto 0; }
+  .drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(2, 6, 23, 0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+}
+
+.section-card {
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  animation: fade-up 0.45s both;
+}
+.section-title { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #a5b4fc; margin-bottom: 0.5rem; }
+.section-title .icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: rgba(129, 140, 248, 0.15); font-size: 0.95rem; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.source-chip { display: inline-flex; gap: 0.3rem; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 999px; background: rgba(34, 211, 238, 0.12); border: 1px solid rgba(34, 211, 238, 0.3); color: #a5f3fc; }
+
+/* ---------- Shimmer skeleton (shown while the AI is thinking) ---------- */
+.skeleton {
+  border-radius: 0.6rem;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.13) 37%, rgba(255,255,255,0.05) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+@keyframes shimmer { from { background-position: 100% 50%; } to { background-position: 0 50%; } }
+
+/* ---------- Quiz ---------- */
+.quiz-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
+}
+.quiz-option:not(:disabled):hover { background: rgba(129, 140, 248, 0.15); border-color: rgba(129, 140, 248, 0.5); }
+.quiz-option.correct { background: rgba(52, 211, 153, 0.18); border-color: var(--ok); color: #d1fae5; }
+.quiz-option.wrong { background: rgba(251, 113, 133, 0.18); border-color: var(--bad); color: #ffe4e6; animation: shake 0.45s; }
+.quiz-option:disabled { cursor: default; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+/* ---------- Toasts ---------- */
+.toast { max-width: 380px; padding: 0.75rem 1rem; border-radius: 0.9rem; font-size: 0.85rem; animation: fade-up 0.3s both; }
+.toast.error { border-color: rgba(251, 113, 133, 0.4); }
+.toast.hide { opacity: 0; transform: translateY(8px); transition: all 0.3s; }
+
+/* ---------- Recent list ---------- */
+.badge { font-size: 0.7rem; padding: 0.15rem 0.55rem; border-radius: 999px; font-weight: 600; }
+.badge.ready { background: rgba(52, 211, 153, 0.15); color: #6ee7b7; }
+.badge.failed { background: rgba(251, 113, 133, 0.15); color: #fda4af; }
+.badge.working { background: rgba(129, 140, 248, 0.15); color: #c7d2fe; }
+
+/* ---------- Respect "reduce motion" accessibility setting ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
