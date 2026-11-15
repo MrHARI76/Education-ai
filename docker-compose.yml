@@ -1,5 +1,3 @@
-# Two containers: the app and the Qdrant vector database.
-# Ollama runs on the host machine (not here) so it can use the Mac/PC GPU.
 services:
   app:
     build: .
@@ -7,11 +5,11 @@ services:
       - "8000:8000"
     env_file: .env
     volumes:
-      - ./data:/app/data # uploads + SQLite survive restarts
+      - ./data:/app/data
     depends_on:
       - qdrant
     extra_hosts:
-      - "host.docker.internal:host-gateway" # lets the container reach Ollama on the host (needed on Linux)
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   qdrant:

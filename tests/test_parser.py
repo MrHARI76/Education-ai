@@ -36,7 +36,7 @@ def test_chunks_keep_metadata(sample_files: dict[str, Path]) -> None:
     """Every chunk carries source info and a running chunk_index."""
     sections, _ = parse_document(sample_files["pptx"], "bio.pptx")
     chunks = chunk_sections(sections, chunk_size=200, chunk_overlap=30)
-    assert len(chunks) > len(sections)  # small chunk_size forces splitting
+    assert len(chunks) > len(sections)
     assert [c["chunk_index"] for c in chunks] == list(range(len(chunks)))
     assert {"text", "source", "file_type", "location", "heading"} <= chunks[0].keys()
     assert all(len(c["text"]) <= 200 for c in chunks)

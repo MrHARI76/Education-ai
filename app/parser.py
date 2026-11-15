@@ -22,7 +22,7 @@ from pypdf import PdfReader
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".pptx"}
 LEGACY_EXTENSIONS = {".doc": ".docx", ".ppt": ".pptx"}
-MIN_TEXT_CHARS = 200  # less than this almost always means a scanned/image-only file
+MIN_TEXT_CHARS = 200
 HEADING_STYLES = {"Title", "Heading 1", "Heading 2", "Heading 3"}
 
 
@@ -47,8 +47,8 @@ class Section:
 
 def clean_text(text: str) -> str:
     """Collapse runs of spaces/tabs and blank lines so the text is compact."""
-    text = re.sub(r"[ \t ]+", " ", text)  # many spaces -> one space
-    text = re.sub(r"\n\s*\n+", "\n\n", text)  # many blank lines -> one
+    text = re.sub(r"[ \t ]+", " ", text)
+    text = re.sub(r"\n\s*\n+", "\n\n", text)
     return text.strip()
 
 
@@ -83,9 +83,9 @@ def _iter_docx_blocks(doc: Any) -> list[Paragraph | Table]:
     """
     blocks: list[Paragraph | Table] = []
     for child in doc.element.body.iterchildren():
-        if child.tag.endswith("}p"):  # "p" is a paragraph element in Word XML
+        if child.tag.endswith("}p"):
             blocks.append(Paragraph(child, doc))
-        elif child.tag.endswith("}tbl"):  # "tbl" is a table element
+        elif child.tag.endswith("}tbl"):
             blocks.append(Table(child, doc))
     return blocks
 
@@ -106,7 +106,7 @@ def parse_docx(path: Path, source: str) -> tuple[list[Section], list[str]]:
     sections: list[Section] = []
     headings: list[str] = []
     current_heading = ""
-    buffer: list[str] = []  # text collected under the current heading
+    buffer: list[str] = []
 
     def flush() -> None:
         """Turn the collected text into a Section and reset the buffer."""
@@ -125,10 +125,10 @@ def parse_docx(path: Path, source: str) -> tuple[list[Section], list[str]]:
             continue
         style = block.style.name if block.style is not None else ""
         if style in HEADING_STYLES:
-            flush()  # close the previous section before starting a new one
+            flush()
             current_heading = text
             headings.append(text)
-            buffer.append(text)  # keep the heading inside its own section's text
+            buffer.append(text)
         else:
             buffer.append(text)
     flush()
@@ -141,7 +141,7 @@ def parse_pptx(path: Path, source: str) -> tuple[list[Section], list[str]]:
     sections: list[Section] = []
     headings: list[str] = []
     for slide_number, slide in enumerate(prs.slides, start=1):
-        title_shape = slide.shapes.title  # None if the slide has no title placeholder
+        title_shape = slide.shapes.title
         title = title_shape.text.strip() if title_shape is not None and title_shape.has_text_frame else ""
         parts = [title] if title else []
         for shape in slide.shapes:
@@ -186,7 +186,7 @@ def parse_document(path: Path, source: str) -> tuple[list[Section], list[str]]:
         sections, headings = parsers[ext](path, source)
     except ParseError:
         raise
-    except Exception as exc:  # corrupt or password-protected files land here
+    except Exception as exc:
         raise ParseError(f"Could not read this file. Is it damaged or password-protected? ({exc})") from exc
 
     total_chars = sum(len(s.text) for s in sections)

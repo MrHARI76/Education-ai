@@ -46,7 +46,6 @@ def ensure_collection(max_wait_seconds: float = 30.0) -> None:
                     settings.qdrant_collection,
                     vectors_config=models.VectorParams(size=EMBED_DIM, distance=models.Distance.COSINE),
                 )
-                # An index on doc_id makes the per-document filter fast.
                 client.create_payload_index(
                     settings.qdrant_collection,
                     field_name="doc_id",
@@ -95,7 +94,6 @@ def upsert_chunks(doc_id: str, chunks: list[dict[str, Any]], vectors: list[list[
         )
         for chunk, vector in zip(chunks, vectors, strict=True)
     ]
-    # Send in batches so a huge document doesn't create one giant request.
     for start in range(0, len(points), 256):
         get_client().upsert(settings.qdrant_collection, points=points[start : start + 256])
 

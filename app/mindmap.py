@@ -24,7 +24,7 @@ NUM_EXCERPTS = 10
 EXCERPT_CHARS = 400
 MAX_BRANCHES = 7
 MAX_CHILDREN = 5
-MAX_LABEL_WORDS = 6  # prompt asks for 5; we allow one extra before trimming
+MAX_LABEL_WORDS = 6
 
 
 def pick_excerpts(chunks: list[dict[str, Any]], count: int = NUM_EXCERPTS) -> list[str]:
@@ -116,11 +116,10 @@ def fallback_mindmap(
     central = headings[0] if headings else Path(filename).stem.replace("_", " ").replace("-", " ")
     branch_labels = [h for h in headings[1:] if len(h.split()) <= 8][:MAX_BRANCHES]
     pool = [k for k in keywords if k.lower() not in {b.lower() for b in branch_labels}]
-    if len(branch_labels) < 3:  # not enough headings: promote top keywords to branches
+    if len(branch_labels) < 3:
         branch_labels = pool[:5]
         pool = pool[5:]
 
-    # Which keywords appear in the chunks under each heading?
     children: dict[str, list[str]] = {b: [] for b in branch_labels}
     used: set[str] = set()
     for branch in branch_labels:
@@ -129,7 +128,6 @@ def fallback_mindmap(
             if kw not in used and kw.lower() in text and len(children[branch]) < 3:
                 children[branch].append(kw)
                 used.add(kw)
-    # Share leftover keywords so every branch has at least two children.
     leftovers = iter(k for k in pool if k not in used)
     for branch in branch_labels:
         while len(children[branch]) < 2:
@@ -138,7 +136,7 @@ def fallback_mindmap(
                 break
             children[branch].append(kw)
 
-    tree = LLMMindMap.model_construct(  # model_construct skips validation (lists may be short)
+    tree = LLMMindMap.model_construct(
         central_topic=central,
         branches=[
             LLMBranch.model_construct(

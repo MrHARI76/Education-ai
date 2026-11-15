@@ -15,10 +15,9 @@ import yake
 
 from app.embeddings import embed_texts
 
-MAX_TEXT_CHARS = 200_000  # YAKE gets slow on huge inputs; the start of a doc is enough
+MAX_TEXT_CHARS = 200_000
 SIMILARITY_THRESHOLD = 0.85
 
-# Words that make a phrase a "fragment" if it starts or ends with them.
 STOPWORDS = {
     "a", "an", "the", "and", "or", "but", "of", "to", "in", "on", "at", "for", "with",
     "by", "from", "as", "is", "are", "was", "were", "be", "been", "this", "that",
@@ -32,7 +31,7 @@ def is_useful_phrase(phrase: str) -> bool:
     words = phrase.lower().split()
     if not words or len(phrase) < 3:
         return False
-    if all(re.fullmatch(r"[\d\W_]+", w) for w in words):  # only digits/punctuation
+    if all(re.fullmatch(r"[\d\W_]+", w) for w in words):
         return False
     return words[0] not in STOPWORDS and words[-1] not in STOPWORDS
 
@@ -47,7 +46,6 @@ def dedupe_by_meaning(phrases: list[str]) -> list[str]:
     vectors = embed_texts(phrases)
     kept: list[int] = []
     for i in range(len(phrases)):
-        # Vectors are normalised, so the dot product is the cosine similarity.
         if all(float(vectors[i] @ vectors[j]) <= SIMILARITY_THRESHOLD for j in kept):
             kept.append(i)
     return [phrases[i] for i in kept]
@@ -57,6 +55,6 @@ def extract_keywords(text: str, top: int = 40) -> list[str]:
     """Return up to `top` key phrases (1–3 words), most important first."""
     extractor = yake.KeywordExtractor(lan="en", n=3, top=top, dedupLim=0.9)
     scored = extractor.extract_keywords(text[:MAX_TEXT_CHARS])
-    scored.sort(key=lambda pair: pair[1])  # lower score = more important
+    scored.sort(key=lambda pair: pair[1])
     phrases = [phrase for phrase, _score in scored if is_useful_phrase(phrase)]
     return dedupe_by_meaning(phrases)

@@ -10,13 +10,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-# "simple" = explain like to a 12-year-old; "standard" = normal level.
 Level = Literal["simple", "standard"]
 
 
-# ---------------------------------------------------------------------------
-# LLM output schemas (what we ask the model to return)
-# ---------------------------------------------------------------------------
 class LLMChildNode(BaseModel):
     """A sub-concept under a branch of the mind map."""
 
@@ -44,8 +40,8 @@ class Quiz(BaseModel):
 
     question: str
     options: list[str] = Field(min_length=4, max_length=4)
-    correct_index: int = Field(ge=0, le=3)  # position of the right option (0-3)
-    why: str  # short reason the correct answer is correct
+    correct_index: int = Field(ge=0, le=3)
+    why: str
 
 
 class LLMExplanation(BaseModel):
@@ -63,9 +59,6 @@ class LLMAnswer(BaseModel):
     answer: str
 
 
-# ---------------------------------------------------------------------------
-# Mind map as returned to the frontend (flat list = easy to draw as a graph)
-# ---------------------------------------------------------------------------
 class MindMapNode(BaseModel):
     """One node of the graph. `parent_id` is None only for the centre."""
 
@@ -73,7 +66,7 @@ class MindMapNode(BaseModel):
     label: str
     summary: str
     parent_id: str | None
-    level: int  # 0 = centre, 1 = branch, 2 = sub-concept
+    level: int
 
 
 class MindMap(BaseModel):
@@ -84,15 +77,12 @@ class MindMap(BaseModel):
     generated_by: Literal["llm", "fallback"] = "llm"
 
 
-# ---------------------------------------------------------------------------
-# API request / response bodies
-# ---------------------------------------------------------------------------
 class Source(BaseModel):
     """Where a piece of information came from, e.g. 'notes.pdf, page 3'."""
 
-    source: str  # file name
-    location: str  # "page 3" or "slide 4"
-    heading: str = ""  # nearest heading, helpful for DOCX where there are no page numbers
+    source: str
+    location: str
+    heading: str = ""
 
 
 class ExplainRequest(BaseModel):

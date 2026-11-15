@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def _embed_and_store(doc_id: str, chunks: list[dict]) -> None:
     """Embed every chunk and save the vectors in Qdrant (blocking; run in a thread)."""
-    vector_store.delete_document(doc_id)  # clear old points if this is a retry
+    vector_store.delete_document(doc_id)
     vectors = embed_texts([c["text"] for c in chunks])
     vector_store.upsert_chunks(doc_id, chunks, vectors.tolist())
 
@@ -52,7 +52,6 @@ async def process_document(doc_id: str, path: Path, filename: str) -> None:
         try:
             mindmap = await build_mindmap(filename, headings, keywords, chunks)
         except LLMError as exc:
-            # The LLM failed twice (or is down): build a simpler map so the demo still works.
             logger.warning("LLM mind map failed (%s); using fallback", exc)
             mindmap = fallback_mindmap(filename, headings, keywords, chunks)
 

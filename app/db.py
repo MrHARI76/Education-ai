@@ -44,7 +44,7 @@ def connect() -> Iterator[sqlite3.Connection]:
     (background tasks run in other threads).
     """
     conn = sqlite3.connect(settings.db_path)
-    conn.row_factory = sqlite3.Row  # lets us read columns by name: row["status"]
+    conn.row_factory = sqlite3.Row
     try:
         yield conn
         conn.commit()

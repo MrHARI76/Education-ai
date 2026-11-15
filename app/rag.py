@@ -16,8 +16,8 @@ from app.embeddings import embed_texts, rerank
 from app.llm import chat_json
 from app.models import AskResponse, ExplainResponse, LLMAnswer, LLMExplanation, Level, Source
 
-SEARCH_LIMIT = 20  # cheap vector search casts a wide net…
-TOP_K = 4  # …then the accurate reranker keeps only the best few
+SEARCH_LIMIT = 20
+TOP_K = 4
 
 
 class NotFound(Exception):
@@ -83,7 +83,6 @@ async def explain_node(doc_id: str, node_id: str, level: Level) -> ExplainRespon
     topic = doc["mindmap"]["central_topic"]
     parent = nodes.get(node["parent_id"] or "", {}).get("label", topic)
 
-    # The query mixes the concept with its context, e.g. "Mitosis. Cell division. Biology".
     query = f"{node['label']}. {parent}. {topic}"
     chunks = await retrieve(doc_id, query)
 
@@ -94,7 +93,6 @@ async def explain_node(doc_id: str, node_id: str, level: Level) -> ExplainRespon
         level_instruction=prompts.LEVEL_INSTRUCTIONS[level],
         context=format_context(chunks),
     )
-    # Slightly higher temperature for "simple" so the rewrite actually differs.
     temperature = 0.4 if level == "simple" else 0.2
     explanation = await chat_json(prompts.EXPLAIN_SYSTEM, user, LLMExplanation, temperature=temperature)
 

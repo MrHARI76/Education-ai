@@ -18,7 +18,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T", bound=BaseModel)  # "any Pydantic model" — lets chat_json return the right type
+T = TypeVar("T", bound=BaseModel)
 
 RETRY_REMINDER = "\n\nReturn only valid JSON matching the schema. No extra text."
 
@@ -47,9 +47,9 @@ async def _post_chat(system: str, user: str, schema: dict, temperature: float) -
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        "format": schema,  # Ollama structured outputs: reply must match this JSON Schema
+        "format": schema,
         "options": {"num_ctx": settings.llm_num_ctx, "temperature": temperature},
-        "stream": False,  # one complete reply instead of a token-by-token stream
+        "stream": False,
     }
     try:
         async with httpx.AsyncClient(timeout=settings.llm_timeout) as client:
@@ -58,7 +58,7 @@ async def _post_chat(system: str, user: str, schema: dict, temperature: float) -
         raise LLMUnavailable("The local AI model took too long to answer. Try again.") from exc
     except httpx.HTTPError as exc:
         raise LLMUnavailable("Ollama is not reachable. Is it running?") from exc
-    if response.status_code == 404:  # Ollama returns 404 when the model isn't pulled
+    if response.status_code == 404:
         raise LLMUnavailable(f"Model '{settings.llm_model}' not found. Run: ollama pull {settings.llm_model}")
     if response.status_code != 200:
         raise LLMError(f"Ollama error {response.status_code}: {response.text[:200]}")
@@ -97,6 +97,5 @@ async def health() -> tuple[bool, bool]:
         return False, False
     names = {m.get("name", "") for m in response.json().get("models", [])}
     wanted = settings.llm_model
-    # "llama3.1" with no tag means "llama3.1:latest" to Ollama.
     available = wanted in names or (":" not in wanted and f"{wanted}:latest" in names)
     return True, available

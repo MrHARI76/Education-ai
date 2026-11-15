@@ -39,7 +39,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger("nexused")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
-READ_BLOCK = 1024 * 1024  # read uploads 1 MB at a time to check size without loading everything
+READ_BLOCK = 1024 * 1024
 ACTIVE_STATUSES = ("queued", "parsing", "embedding", "keywords", "building_map")
 
 
@@ -59,7 +59,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         await asyncio.to_thread(vector_store.ensure_collection)
     except Exception:
-        # Keep the server up so the UI can show a red "Qdrant" chip instead of nothing.
         logger.exception("Could not connect to Qdrant at %s", settings.qdrant_url)
     logger.info("NexusEd AI ready (model: %s)", settings.llm_model)
     yield
@@ -68,7 +67,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="NexusEd AI", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",  # local dev servers only
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -118,7 +117,7 @@ async def upload(file: UploadFile, background: BackgroundTasks) -> UploadRespons
 
     Returns the doc_id immediately; the browser then polls for progress.
     """
-    filename = Path(file.filename or "").name  # .name drops any folder path a client might send
+    filename = Path(file.filename or "").name
     try:
         ext = check_extension(filename)
     except ParseError as exc:
@@ -195,5 +194,4 @@ async def ask(body: AskRequest) -> AskResponse:
         raise llm_http_error(exc) from exc
 
 
-# Mounted LAST: a mount at "/" catches every path, so the /api routes must be registered first.
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

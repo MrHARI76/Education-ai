@@ -12,7 +12,7 @@ import pytest
 
 os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="nexus-test-")
 os.environ["QDRANT_URL"] = ":memory:"
-os.environ["OLLAMA_URL"] = "http://127.0.0.1:9"  # nothing listens here -> "Ollama down"
+os.environ["OLLAMA_URL"] = "http://127.0.0.1:9"
 
 SAMPLE_PARAGRAPH = (
     "Photosynthesis is the process plants use to turn sunlight, water and carbon dioxide "
@@ -30,7 +30,7 @@ def make_pdf(path: Path) -> Path:
     for page_title in ("Light reactions", "Calvin cycle"):
         text = c.beginText(50, 780)
         text.textLine(page_title)
-        for i in range(0, len(SAMPLE_PARAGRAPH), 80):  # wrap long text into lines
+        for i in range(0, len(SAMPLE_PARAGRAPH), 80):
             text.textLine(SAMPLE_PARAGRAPH[i : i + 80])
         c.drawText(text)
         c.showPage()
@@ -43,7 +43,7 @@ def make_docx(path: Path) -> Path:
     from docx import Document
 
     doc = Document()
-    doc.add_heading("Photosynthesis", level=0)  # level 0 = "Title" style
+    doc.add_heading("Photosynthesis", level=0)
     doc.add_heading("Light reactions", level=1)
     doc.add_paragraph(SAMPLE_PARAGRAPH)
     doc.add_heading("Calvin cycle", level=1)
@@ -61,7 +61,7 @@ def make_pptx(path: Path) -> Path:
 
     prs = Presentation()
     for title in ("Light reactions", "Calvin cycle"):
-        slide = prs.slides.add_slide(prs.slide_layouts[1])  # layout 1 = "Title and Content"
+        slide = prs.slides.add_slide(prs.slide_layouts[1])
         slide.shapes.title.text = title
         slide.placeholders[1].text = SAMPLE_PARAGRAPH
         slide.notes_slide.notes_text_frame.text = f"Remember to explain {title}."

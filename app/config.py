@@ -21,22 +21,17 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # --- Ollama (the local LLM server running on the host machine) ---
     ollama_url: str = "http://host.docker.internal:11434"
     llm_model: str = "llama3.1:8b"
-    llm_num_ctx: int = 8192  # how many tokens the model can "see" at once
-    llm_timeout: float = 180.0  # seconds; local models can be slow on CPU
+    llm_num_ctx: int = 8192
+    llm_timeout: float = 180.0
 
-    # --- Qdrant (the vector database) ---
-    # Use ":memory:" to run Qdrant inside Python without a server (used by tests).
     qdrant_url: str = "http://qdrant:6333"
     qdrant_collection: str = "nexus_chunks"
 
-    # --- Machine-learning models (downloaded once, then used offline) ---
     embed_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
-    # --- Storage and limits ---
     data_dir: Path = Path("./data")
     max_upload_mb: int = 25
 

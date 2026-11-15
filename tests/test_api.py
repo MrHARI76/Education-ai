@@ -54,9 +54,6 @@ def fake_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(rag, "chat_json", fake_chat_json)
 
 
-# ---------------------------------------------------------------------------
-# Health and upload validation
-# ---------------------------------------------------------------------------
 def test_health_reports_each_service(client: TestClient) -> None:
     """Qdrant (in memory) is up; Ollama is deliberately unreachable in tests."""
     body = client.get("/api/health").json()
@@ -77,7 +74,7 @@ def test_rejects_legacy_doc_with_hint(client: TestClient) -> None:
 
 
 def test_rejects_too_large_file(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "max_upload_mb", 0)  # any non-empty file is now "too large"
+    monkeypatch.setattr(settings, "max_upload_mb", 0)
     response = client.post("/api/upload", files={"file": ("big.pdf", b"%PDF-1.4 data", "application/pdf")})
     assert response.status_code == 413
 
@@ -90,9 +87,6 @@ def test_unreadable_file_marks_document_failed(client: TestClient) -> None:
     assert doc["error"]
 
 
-# ---------------------------------------------------------------------------
-# Pipeline + mind map
-# ---------------------------------------------------------------------------
 def test_upload_builds_fallback_mindmap_when_llm_down(client: TestClient, ready_doc: str) -> None:
     """With Ollama down the demo still gets a usable map."""
     doc = client.get(f"/api/documents/{ready_doc}").json()
@@ -102,7 +96,7 @@ def test_upload_builds_fallback_mindmap_when_llm_down(client: TestClient, ready_
     assert mindmap["nodes"][0] == {**mindmap["nodes"][0], "id": "n0", "level": 0, "parent_id": None}
     assert any(n["level"] == 1 for n in mindmap["nodes"])
     ids = {n["id"] for n in mindmap["nodes"]}
-    assert all(n["parent_id"] in ids for n in mindmap["nodes"][1:])  # every link points to a real node
+    assert all(n["parent_id"] in ids for n in mindmap["nodes"][1:])
 
 
 def test_document_list_contains_upload(client: TestClient, ready_doc: str) -> None:
@@ -126,20 +120,17 @@ def test_flatten_enforces_limits_and_ids() -> None:
     tree = LLMMindMap(central_topic="Topic", branches=branches)
     result = flatten(tree, generated_by="llm")
     nodes = result["nodes"]
-    assert sum(n["level"] == 1 for n in nodes) == 7  # max 7 branches
-    assert sum(n["parent_id"] == "n1" for n in nodes) == 5  # max 5 children
+    assert sum(n["level"] == 1 for n in nodes) == 7
+    assert sum(n["parent_id"] == "n1" for n in nodes) == 5
     assert [n["id"] for n in nodes] == [f"n{i}" for i in range(len(nodes))]
 
 
-# ---------------------------------------------------------------------------
-# Explain and ask
-# ---------------------------------------------------------------------------
 def test_explain_returns_sources_and_caches(client: TestClient, ready_doc: str, fake_llm: None) -> None:
     body = {"doc_id": ready_doc, "node_id": "n1", "level": "standard"}
     first = client.post("/api/explain", json=body).json()
     assert first["cached"] is False
     assert len(first["key_points"]) == 3
-    assert first["sources"] and first["sources"][0]["source"] == "bio.docx"  # added by the server
+    assert first["sources"] and first["sources"][0]["source"] == "bio.docx"
     second = client.post("/api/explain", json=body).json()
     assert second["cached"] is True
 
@@ -157,7 +148,7 @@ def test_explain_unknown_node_is_404(client: TestClient, ready_doc: str, fake_ll
 
 def test_explain_rejects_bad_level(client: TestClient, ready_doc: str) -> None:
     response = client.post("/api/explain", json={"doc_id": ready_doc, "node_id": "n1", "level": "expert"})
-    assert response.status_code == 422  # FastAPI's "invalid request body"
+    assert response.status_code == 422
 
 
 def test_ask_returns_answer_and_sources(client: TestClient, ready_doc: str, fake_llm: None) -> None:

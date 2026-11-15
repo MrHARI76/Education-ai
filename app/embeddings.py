@@ -19,7 +19,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-EMBED_DIM = 384  # size of all-MiniLM-L6-v2 vectors; Qdrant needs to know this
+EMBED_DIM = 384
 
 _embedder: SentenceTransformer | None = None
 _reranker: CrossEncoder | None = None
@@ -54,5 +54,5 @@ def rerank(query: str, passages: list[str], top_k: int) -> list[int]:
     load_models()
     assert _reranker is not None
     scores = _reranker.predict([(query, p) for p in passages], show_progress_bar=False)
-    order = np.argsort(scores)[::-1]  # argsort sorts ascending, [::-1] flips to best-first
+    order = np.argsort(scores)[::-1]
     return [int(i) for i in order[:top_k]]
